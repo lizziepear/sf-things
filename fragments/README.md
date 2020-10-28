@@ -9,11 +9,10 @@ This document
 1.  Make some test polygons.
 2.  See what the two `sf` intersection functions do.
 3.  Start developing new method for KBA-PA overlap analysis to help solve issue with random years.
-
--   Crop PAs to area within the KBA
--   Chop the PAs into fragments - where each fragment is a unique area of overlap between different PAs (like the sections of a Venn diagram where the circles represent the PAs)
--   Make data frame A with 1 row per fragment, including the origins of the fragment (= which PAs combined to make that fragment)
--   Make data frame B with multiple rows per fragment, recording the various PAs and their years.
+    -   Crop PAs to area within the KBA
+    -   Chop the PAs into fragments - where each fragment is a unique area of overlap between different PAs (like the sections of a Venn diagram where the circles represent the PAs)
+    -   Make data frame A with 1 row per fragment, including the origins of the fragment (= which PAs combined to make that fragment)
+    -   Make data frame B with multiple rows per fragment, recording the various PAs and their years.
 
 *Not yet implemented:*
 
@@ -30,7 +29,7 @@ Make test data
 
 From the [sf vingette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html):
 
-*The three classes used to represent simpe features are:*
+*The three classes used to represent simple features are:*
 
 -   `sf` - *the table* (`data.frame`) *with feature attributes and feature geometries, which contains*
 -   `sfc` - *the list-column with the geometries for each feature (record), which is composed of*
@@ -70,7 +69,7 @@ pa.4 <- matrix(c(11,4.5,13,4.5,13,7,11,7,11,4.5), ncol=2, byrow=TRUE) %>%
 pa.5 <- matrix(c(10,2,12.5,2,12.5,4,10,4,10,2), ncol=2, byrow=TRUE) %>%
   list() %>% st_polygon()
 
-## combine PA polygons into a list
+# combine PA polygons into a list
 pas.sfg <- list(pa.1, pa.2, pa.3, pa.4, pa.5)
 ```
 
@@ -128,6 +127,8 @@ ggplot() +
 
 We need to convert the polygons to geometries, then make that into the `geometry` column of a `data.frame` to make a normal `sf` object.
 
+<br>
+
 ------------------------------------------------------------------------
 
 Convert sfg to sfc
@@ -135,8 +136,8 @@ Convert sfg to sfc
 
 Function:
 
--   `sf::st_sfc()` - arguments are:
-    -   the `sfg` object and
+-   `sf::st_sfc()` - the arguments are:
+    -   the `sfg` object, and
     -   a coordinate reference system (CRS) as either an EPSG code (here using 4326 for WSG84) or as a `proj4string` character string.
 
 ``` r
@@ -176,6 +177,8 @@ class(pas.sfc)  # check class
 ## [1] "sfc_POLYGON" "sfc"
 ```
 
+<br>
+
 ------------------------------------------------------------------------
 
 Convert sfc to sf
@@ -197,6 +200,7 @@ Side note: you could also use:
 
 ``` r
 # KBA ----
+
 kba.df <- tibble(country = "Mars",
                  kba_name = "Olympus Mons National Park", 
                  kba_id = 512) %>%  # define data frame
@@ -216,7 +220,9 @@ kba.df  # check what it looks like
 class(kba.df)  # check class
 ## [1] "sf"         "tbl_df"     "tbl"        "data.frame"
 
+
 # PAs ----
+
 pas.df <- tibble(country = "Mars", 
                  pa_name = c("PA 1", "PA 2", "PA 3", "PA 4", "PA 5"), 
                  pa_id = c(101, 102, 103, 104, 105),
@@ -241,6 +247,8 @@ pas.df  # check what it looks like
 class(pas.df)  # check class
 ## [1] "sf"         "tbl_df"     "tbl"        "data.frame"
 ```
+
+<br>
 
 ------------------------------------------------------------------------
 
@@ -271,10 +279,14 @@ Test intersection functions
 
 Testing the functions on KBA and PA datasets:
 
+-   `sf::st_intersects()` with 2 input objects - produces a matrix of `TRUE` / `FALSE` indicating whether each pair intersects.
+-   `sf::st_intersection()` with 2 input objects - produces a new `sf` object containing a feature for each intersection area of input 1 with input 2 (e.g. KBA with PA).
+-   `sf::st_intersection()` with 1 input object - this fragments the onject, creating an `sf` object containing a feature for each intersection area of input 1 with itself (e.g. PAs with each other).
+
 st\_intersects()
 ----------------
 
-Produces a matrix of `TRUE` or `FALSE` indicating whether each pair intersect, where:
+Produces a **matrix** of `TRUE` or `FALSE` indicating whether each pair intersect, where:
 
 -   ROW = the KBA (here, n=1)
 -   COLUMN = each of the PAs (here, n=5)
@@ -326,7 +338,7 @@ res.intersects %>%
 st\_intersection()
 ------------------
 
-Produces a *new sf object* with a row for each segment of where the KBA intersects with each PA.
+Produces a **new sf object** with a row for each segment of where the KBA intersects with each PA.
 
 ``` r
 
@@ -542,7 +554,7 @@ Origins column
 -   For each of the PA indices in the Origins column
     -   Record PA name, PA id, PA year
 
-*Note: I've commented out the print to console step, which was used to print out which fragment it's on, and which PA within that fragment, just for sanity-checking.*
+*Note: I've commented out the print to console steps, which I used to print out which fragment we're on, and which PA within that fragment, just for sanity-checking the code as I tested it.*
 
 ``` r
 
@@ -554,77 +566,41 @@ fragments.df <- tibble(kba_id = as.integer(),  # create empty tibble to store re
                        pa_name = as.character(), pa_id = as.integer(), year = as.integer())
 
 for (i in 1:length(fragments)) {
-  # i <- 1  # testing
-  
-  cat("\nfragment_id\t", i, "\n")
+
+  # cat("\nfragment_id\t", i, "\n")
   
   frag <- fragments[i]
-  # frag
-  
+
   frag.df <- int.pas %>%
     st_drop_geometry() %>%  # get non-geom data frame
     filter(fragment_id == frag)  # just data fr this fragment
-  # frag.df  # print to check
-  
+
   frag.pas <- frag.df$origins %>% unlist()  # indices of PAs in this frag
-  # frag.pas
-  
+
   frag.num.pas <- frag.pas %>% length()  # number of PAs in this frag
-  # frag.num.pas
-  
+
   for (k in 1:frag.num.pas) {  # loop over PAs in this frag
-    # k <- 1  # testing
-    
+
     k.pa <- frag.pas[k]
-    # k.pa
-    
-    cat("\t pa number:\t", k.pa, "\n")
+
+    # cat("\t pa number:\t", k.pa, "\n")
     
     pa.index <- frag.pas[k.pa]  # get PA index in pas.df.new
     
     pa.info <- pas.df.new[k.pa, ] %>%
       st_drop_geometry()
-    # pa.info
-    
+
     res.k.pa <- tibble(kba_id = as.integer(frag.df$kba_id),
                   fragment_id = as.integer(frag.df$fragment_id), 
                   n_pas = as.integer(frag.df$n.overlaps),
                   pa_name = as.character(pa.info$pa_name),
                   pa_id = as.integer(pa.info$pa_id), 
                   year = as.integer(pa.info$year))
-    # res.k.pa
-    
+
     ## add to main results (fragments.df)
     fragments.df <- bind_rows(fragments.df, res.k.pa)
   }
 }
-## 
-## fragment_id   1 
-##   pa number:  1 
-## 
-## fragment_id   2 
-##   pa number:  1 
-##   pa number:  2 
-## 
-## fragment_id   3 
-##   pa number:  2 
-## 
-## fragment_id   4 
-##   pa number:  2 
-##   pa number:  3 
-## 
-## fragment_id   5 
-##   pa number:  1 
-##   pa number:  2 
-##   pa number:  3 
-## 
-## fragment_id   6 
-##   pa number:  3 
-## 
-## fragment_id   7 
-##   pa number:  4
-
-# fragments.df
 
 # print out table
 fragments.df %>%

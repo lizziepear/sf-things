@@ -39,17 +39,18 @@ This way, we only have to run the spatial KBA-PA overlap _once_ to get the fragm
 
 ### process
 
-1. Make polygons from coordinates, convert them to `sf` objects.
+**1 - ** Make polygons from coordinates, convert them to `sf` objects.
   * Pure polygons (`sfg`) -> geometry objects (`sfc`) -> full sf objects including data frame (`sf`)
   * ![Step 1](fragments/README_files/figure-markdown_github/plot-sf-1.png)
-1. Crop PAs to area within the KBA
+**2 - ** Crop PAs to area within the KBA
   * ![Step 2](fragments/README_files/figure-markdown_github/crop-pas-3-1.png)
-1. Chop the PAs into fragments - where each fragment is a unique area of overlap between different PAs (like the sections of a Venn diagram where the circles represent the PAs)
+**3 - ** Chop the PAs into fragments - where each fragment is a unique area of overlap between different PAs (like the sections of a Venn diagram where the circles represent the PAs)
   * ![Step 3](fragments/README_files/figure-markdown_github/int-pas-2-1.png)
-1. Make data frame A with 1 row per fragment, including the origins of the fragment (= which PAs combined to make that fragment)
+**4 - ** Make data frame A with 1 row per fragment, including the origins of the fragment (= which PAs combined to make that fragment)
   * ![Step 4](images/fragments_04_dataframeA.png)
-1. Make data frame B with multiple rows per fragment, recording the various PAs and their years.
+**5 - ** Make data frame B with multiple rows per fragment, recording the various PAs and their years.
   * ![Step 5](images/fragments_05_dataframeB.png)
+
 
 Then during the randomisation, we can:
 
